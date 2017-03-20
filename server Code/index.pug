@@ -1,0 +1,118 @@
+//-
+	Index.pug
+
+	This is the home page for this project. It is configured to auto-connect
+	to the server's websocket and handle any events fired from the server end.
+//-
+
+extends base
+
+//- The visual portion of the page
+block content
+	div(class='panel panel-default')
+		div.panel-body
+			h1 MQTT Tracker 
+			p Simple Website for tracking population 'heat maps' using MQTT
+
+			// Implement the graphics portion in the canvas supplied below
+			div.well
+				canvas(id='grid')
+	
+	div(class='panel')
+		div.panel-body
+			button(class='btn btn-primary', type='button', data-toggle='collapse', data-target='#debugLog', aria-expanded='false', aria-controls='debugLog') Show Debug Log
+			div(id='debugLog', class='collapse')
+				div(id='debugLogList', class='well')
+
+//- The scripts needed by this page
+block scripts
+	script(type='text/javascript').
+		$(() => {
+			var socket = io();
+			var m = 0, n = 0, c = 0, l = 0;
+
+			// Handle socket events here
+			//--------------------------
+			// Adds to the debug list
+			socket.on('debug', data => {
+				var time = new Date();
+				//$('#test').html(data.inc);
+				//i = data.inc;
+				var loc = data.location;
+
+				
+
+				switch(loc) {
+					case 'm': m = data.inc;
+								break;
+					case 'n': n = data.inc;
+								break;
+					case 'c': c = data.inc;
+								break;
+					case 'l': l = data.inc; 
+								break;
+					default: {}
+				}
+				clear();
+				
+				draw(m, n, c, l);
+
+				$('#debugLogList').append('<div>' + time + ': ' + data.type + ' | ' + data.msg + '</div>' + 'This is our i value:' + data.inc);
+			});
+			
+		
+			// Handle any canvas code here
+			//----------------------------
+			function circle_maker(x,y)
+			{
+				var c = document.getElementById("grid");
+				var ctx = c.getContext("2d");
+				ctx.beginPath();
+				ctx.arc(x,y,30,0,2*Math.PI);
+				ctx.stroke();
+			}
+
+			function circle_filler(hall, counter, threshold, x, y)
+			{
+				var canvass = document.getElementById("grid");
+				var ctx = canvass.getContext("2d");
+				ctx.font = "10px Arial";
+				var threshold_title="Threshold: " + threshold;
+				var capacity_title="Counter: " + counter;
+
+				if(counter==threshold)
+				{
+				var threshold_title="REACHED";
+				var capacity_title="THRESHOLD";
+				}
+
+				ctx.fillText(hall,x,y);
+				ctx.font = "7px Arial";
+				ctx.fillText(capacity_title,x,y+10);
+				ctx.fillText(threshold_title,x,y+20);
+			}
+
+			function draw(m, n, c, l) {
+				circle_maker(40,40);
+				circle_maker(260,40);
+				circle_maker(40,110);
+				circle_maker(260,110);
+
+				circle_filler("Matherly", m, 4, 20 , 25);
+				circle_filler("Carson", c, 4, 240 , 25);
+				circle_filler("Norman", n, 4, 20 , 95);
+				circle_filler("Little", l, 4, 240 , 95);
+			}
+
+			function clear() {
+				var c = document.getElementById("grid");
+				var ctx = c.getContext("2d");
+				ctx.clearRect(0, 0, c.width, c.height);
+			}
+
+			draw(m,n,c,l);
+
+
+
+			//----------------------------
+		});
